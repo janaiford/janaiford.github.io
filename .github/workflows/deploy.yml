@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: "pages"
   cancel-in-progress: false
 
 jobs:
@@ -26,27 +26,28 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      # 2. Install Ruby
+      # 2. Setup Ruby
       - name: Set up Ruby 3.4.3
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.4.3'
 
-      - name: Install Bundler
-        run: gem install bundler
-
       # 3. Install gems from site/Gemfile
       - name: Install Ruby gems
-        run: bundle install --jobs 4 --retry 3
+        run: |
+          gem install bundler
+          bundle install
+        working-directory: site
 
-      # 4. Configure Pages
-      - name: Configure Pages
+      # 4. Setup Pages
+      - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
 
-      # 5. Build Jekyll in /site
+      # 5. Build Jekyll site (output → site/_site)
       - name: Build with Jekyll
         run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
+        working-directory: site
         env:
           JEKYLL_ENV: production
 
@@ -54,7 +55,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: _site  # relative to /site because of working-directory
+          path: site/_site  
 
   deploy:
     runs-on: ubuntu-latest
