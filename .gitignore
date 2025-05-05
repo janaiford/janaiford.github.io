@@ -1,0 +1,21 @@
+# Ignore dependencies and build artifacts
+.bundle/
+.sass-cache/
+.jekyll-cache/
+.jekyll-metadata
+vendor/
+node_modules/
+
+# Ignore build output (_site) because GitHub Actions will handle it
+_site/
+
+# Ignore system files
+.DS_Store
+
+# Ignore CloudCannon & Bookshop live/demo configs if not needed
+.cloudcannon/
+bookshop-live.js
+
+# Ignore logs, temp, etc.
+*.log
+tmp/
