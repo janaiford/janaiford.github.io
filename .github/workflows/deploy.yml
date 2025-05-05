@@ -1,61 +1,60 @@
 name: Deploy Jekyll site to GitHub Pages
 
-# Trigger on pushes to master (or change to main if needed), and allow manual runs
 on:
   push:
     branches: ["master"]
   workflow_dispatch:
 
-# Grant minimal permissions needed for pages
 permissions:
-  contents: read      
-  pages: write        
-  id-token: write    
+  contents: read
+  pages: write
+  id-token: write
 
-# Ensure only one deployment runs at a time
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site  # 👉 run steps inside /site
 
     steps:
-      # 1. Check out repository
-      - name: Checkout source code
+      # 1. Checkout repo
+      - name: Checkout source
         uses: actions/checkout@v4
 
-      # 2. Set up Ruby 
+      # 2. Install Ruby
       - name: Set up Ruby 3.4.3
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.4.3'
-          bundler-cache: true     # auto cache gems between runs
 
-      # 3. Install dependencies via Bundler
+      - name: Install Bundler
+        run: gem install bundler
+
+      # 3. Install gems from site/Gemfile
       - name: Install Ruby gems
-        run: |
-          gem install bundler      # ensure Bundler is available
-          bundle install           # uses Gemfile & Gemfile.lock
+        run: bundle install --jobs 4 --retry 3
 
-      # 4. Configure GitHub Pages context
-      - name: Prepare GitHub Pages
+      # 4. Configure Pages
+      - name: Configure Pages
         id: pages
         uses: actions/configure-pages@v5
 
-      # 5. Build site with Jekyll into _site/
+      # 5. Build Jekyll in /site
       - name: Build with Jekyll
-        run: bundle exec jekyll build \
-              --baseurl "${{ steps.pages.outputs.base_path }}"
+        run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
         env:
           JEKYLL_ENV: production
 
-      # 6. Upload the generated _site/ directory as an artifact
-      - name: Upload generated site
+      # 6. Upload /site/_site as artifact (note: working directory still inside /site)
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: _site  # relative to /site because of working-directory
 
   deploy:
     runs-on: ubuntu-latest
@@ -63,11 +62,10 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
-      # 7. Deploy that artifact to GitHub Pages (gh-pages branch)
+      # 7. Deploy to GitHub Pages → gh‑pages branch
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
         with:
-          publish_branch: gh-pages
+          branch: gh-pages
